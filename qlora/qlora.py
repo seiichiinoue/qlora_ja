@@ -31,7 +31,7 @@ from transformers import (
     LlamaTokenizer
 
 )
-from datasets import load_dataset, Dataset, DatasetDict, concatenate_datasets
+from datasets import load_dataset, Dataset, DatasetDict, concatenate_datasets, load_from_disk
 import evaluate
 
 from peft import (
@@ -627,6 +627,13 @@ def make_data_module(tokenizer: transformers.PreTrainedTokenizer, args) -> Dict:
             raise NotImplementedError(f"Dataset {dataset_name} not implemented yet.")
         return dataset
 
+    def load_local_data(dataset_path):
+        try:
+            dataset = load_from_disk(dataset_path)
+        except:
+            raise NotImplementedError(f"Dataset {dataset_path} not implemented yet.")
+        return dataset
+
     def format_dataset(dataset, dataset_format):
         if (
             dataset_format == 'alpaca' or dataset_format == 'alpaca-clean' or
@@ -664,14 +671,14 @@ def make_data_module(tokenizer: transformers.PreTrainedTokenizer, args) -> Dict:
 
      # Load dataset.
     if len(args.datasets) == 0:
-        dataset = load_data(args.dataset)
+        dataset = load_local_data(args.dataset)
         dataset = format_dataset(dataset, args.dataset_format)
     else:
         # for multiple datasets, concatenate them
         # TODO: add support for different dataset formats、test datasets
         datasets = []
         for dataset_name in args.datasets:
-            dataset = load_data(dataset_name)
+            dataset = load_local_data(dataset_name)
             dataset = format_dataset(dataset, args.dataset_format)
             assert "input" in dataset.column_names['train'] and "output" in dataset.column_names['train'], \
                 f"Dataset {dataset_name} does not have `input` and `output` columns."
